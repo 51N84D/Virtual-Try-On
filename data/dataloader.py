@@ -9,8 +9,9 @@ from addict import Dict
 import os.path as osp
 import numpy as np
 import argparse
-
 import matplotlib.pyplot as plt
+import sys
+import cv2
 
 
 class CPDataset(data.Dataset):
@@ -75,22 +76,32 @@ class CPDataset(data.Dataset):
         parse_array = np.array(im_parse)
 
         # -------Find segmentation class labels manually
-        #        Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
+        #Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
+        #Image2 = Image.open(osp.join(self.data_path, "image", im_name))
 
-        #        plt.imshow(im_parse, cmap='jet')
-        #        plt.imshow(parse_array, alpha=0.5)
+        #plt.imshow(Image1, cmap='jet')
+        #plt.imshow(parse_array, alpha=0.5)
+        #plt.imshow(Image2)
 
-        #        plt.colorbar()
-        #        plt.show()
+        #plt.colorbar()
+        #plt.show()
         # shirt = 5, pants = 9
         # hair = 2, face = 13
         # ------End
-
+         
         parse_shape = (parse_array > 0).astype(np.float32)
 
-        parse_cloth = (parse_array == 5).astype(
-            np.float32
-        )  # + (parse_array == 9).astype(np.float32)
+        parse_cloth = (parse_array == 5).astype(np.float32)
+
+        
+        #get cropped top img
+        source = Image.open(osp.join(self.data_path, "image", im_name))
+        mask = Image.fromarray(np.uint8(255*parse_cloth)).convert('L')
+        blankImg = Image.new('RGB', (self.fine_height, self.fine_width), (255, 255, 255))
+        
+        imgCropped = Image.composite(source, blankImg, mask)
+        #imgCropped.show()
+        imgCropped = self.transform(imgCropped)  # [-1,1]
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape * 255).astype(np.uint8))
@@ -109,8 +120,8 @@ class CPDataset(data.Dataset):
             "im_name": im_name,  # for visualization or ground truth
             "cloth": c,  # for input
             "cloth_mask": cm,  # for input
-            "image": im,  # for visualization
-            "parse_cloth": im_c,  # for ground truth
+            "image": imgCropped,  # for visualization
+            "parse_cloth": pcm, #was im_c  # for ground truth
             "shape": shape,  # for visualization
         }
 
