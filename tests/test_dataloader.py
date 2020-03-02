@@ -1,21 +1,24 @@
 from pathlib import Path
 import sys
+from addict import Dict
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from data.dataloader import *
+from tests.run import opts
+
 
 if __name__ == "__main__":
     print("Check the dataset for geometric matching module!")
-    print("Command options are 'first_item' or 'first_batch'")
 
-    opt = get_opt() 
-    dataset = CPDataset(opt)
-    data_loader = CPDataLoader(opt, dataset)
+    dataset = CPDataset(opts)
+    data_loader = get_loader(opts)
 
-    print('Size of the dataset: %05d, dataloader: %04d' \
-            % (len(dataset), len(data_loader.data_loader)))
-    first_item = dataset.__getitem__(0)
-    first_batch = data_loader.next_batch()
+    for i in data_loader:
+        i = Dict(i)
+        print("cloth: ", i.cloth.shape)
+        print("cloth mask: ", i.cloth_mask.shape)
+        print("image: ", i.image.shape)
+        print("parse cloth: ", i.parse_cloth.shape)
 
-    from IPython import embed; embed()
+        break
