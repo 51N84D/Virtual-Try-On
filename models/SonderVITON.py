@@ -2,10 +2,10 @@ from .base_model import BaseModel
 from . import networks
 
 
-class SonderFlowEstimator(BaseModel):
+lass SonderFlowEstimator(BaseModel):
     def name(self):
         return "SonderFlowEstimatorModel"
-
+c
     @staticmethod
     def modify_commandline_options(opts, is_train=True):
         print("modifying opts")
@@ -32,9 +32,8 @@ class SonderFlowEstimator(BaseModel):
         self.opt = opt
 
         if self.isTrain:
-
             # define loss functions
-            self.criterionGAN = networks.GANLoss(self.loss_name).to(self.device)
+            self.perceptual_loss = networks.VGGPerceptualLoss()
 
             """
             self.optimizer_G = torch.optim.Adam(
@@ -53,7 +52,8 @@ class SonderFlowEstimator(BaseModel):
             """
 
     def set_input(self, input):
-        print("set input")
+        print(input.keys())
+        print("cloth: ", input.cloth)
         """
         self.image = input.data.x.to(self.device)
         mask = input.data.m.to(self.device)
