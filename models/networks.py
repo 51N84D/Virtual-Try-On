@@ -118,8 +118,8 @@ class FPN(nn.Module):
 class FlowEstimator(nn.Module):
     def __init__(self, num_blocks, input_nc=256, block=Bottleneck):
         super(FlowEstimator, self).__init__()
-        self.SourceFPN = FPN(num_blocks=num_blocks, input_nc=6, block=block)
-        self.TargetFPN = FPN(num_blocks=num_blocks, input_nc=3, block=block)
+        self.SourceFPN = FPN(num_blocks=num_blocks, input_nc=4, block=block)
+        self.TargetFPN = FPN(num_blocks=num_blocks, input_nc=1, block=block)
         self.e5 = self.get_flow(input_nc)
         self.e4 = self.get_flow(input_nc)
         self.e3 = self.get_flow(input_nc)
@@ -148,7 +148,8 @@ class FlowEstimator(nn.Module):
 
         # Warped clothing item
         c_s_prime = self.warp(c_s, self.upsample(f2))
-        print("warped clothes: ", c_s_prime.shape)
+
+        return c_s_prime
 
     # Define convolutional encoder
     def get_flow(self, input_nc):

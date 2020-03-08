@@ -69,3 +69,31 @@ class Timer:
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         print(self.msg % (time.time() - self.start_time))
+
+
+def set_mode(mode, opts):
+
+    if mode == "train":
+        opts.model.is_train = True
+    elif mode == "test":
+        opts.model.is_train = False
+    else:
+        raise "invalid mode"
+
+    return opts
+
+
+def write_images(image_outputs, curr_iter, im_per_row=5, comet_exp=None, store_im=False):
+    """Save output image
+    Arguments:
+        image_outputs {Tensor list} -- list of output images
+        im_per_row {int} -- number of images to be displayed (per row)
+        file_name {str} -- name of the file where to save the images
+    """
+
+    image_outputs = torch.stack(image_outputs)
+    image_grid = vutils.make_grid(image_outputs, nrow=im_per_row, normalize=True, scale_each=True)
+    image_grid = image_grid.permute(1, 2, 0).cpu().detach().numpy()
+
+    if comet_exp is not None:
+        comet_exp.log_image(image_grid, name="test_iter_" + str(curr_iter))
