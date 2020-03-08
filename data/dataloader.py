@@ -19,7 +19,9 @@ class CPDataset(data.Dataset):
         super(CPDataset, self).__init__()
         # base setting
         self.opt = opt
+
         self.dataroot = opt.data.files.base
+
         if opt.model.is_train:
             self.datamode = "train"
             self.data_list = opt.data.files.train
@@ -29,6 +31,7 @@ class CPDataset(data.Dataset):
 
         self.fine_height = opt.data.transforms.height
         self.fine_width = opt.data.transforms.width
+
         self.data_path = osp.join(self.dataroot, self.datamode)
 
         self.transform = transforms.Compose(
@@ -76,31 +79,30 @@ class CPDataset(data.Dataset):
         parse_array = np.array(im_parse)
 
         # -------Find segmentation class labels manually
-        #Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
-        #Image2 = Image.open(osp.join(self.data_path, "image", im_name))
+        # Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
+        # Image2 = Image.open(osp.join(self.data_path, "image", im_name))
 
-        #plt.imshow(Image1, cmap='jet')
-        #plt.imshow(parse_array, alpha=0.5)
-        #plt.imshow(Image2)
+        # plt.imshow(Image1, cmap='jet')
+        # plt.imshow(parse_array, alpha=0.5)
+        # plt.imshow(Image2)
 
-        #plt.colorbar()
-        #plt.show()
+        # plt.colorbar()
+        # plt.show()
         # shirt = 5, pants = 9
         # hair = 2, face = 13
         # ------End
-         
+
         parse_shape = (parse_array > 0).astype(np.float32)
 
         parse_cloth = (parse_array == 5).astype(np.float32)
 
-        
-        #get cropped top img
+        # get cropped top img
         source = Image.open(osp.join(self.data_path, "image", im_name))
-        mask = Image.fromarray(np.uint8(255*parse_cloth)).convert('L')
-        blankImg = Image.new('RGB', (self.fine_height, self.fine_width), (255, 255, 255))
-        
+        mask = Image.fromarray(np.uint8(255 * parse_cloth)).convert("L")
+        blankImg = Image.new("RGB", (self.fine_height, self.fine_width), (255, 255, 255))
+
         imgCropped = Image.composite(source, blankImg, mask)
-        #imgCropped.show()
+        # imgCropped.show()
         imgCropped = self.transform(imgCropped)  # [-1,1]
 
         # shape downsample
@@ -115,13 +117,15 @@ class CPDataset(data.Dataset):
         # clean up
         im_c = im * pcm + (1 - pcm)  # [-1,1], fill 1 for other parts
 
+        pcm = pcm.unsqueeze_(0)
+
         result = {
             "c_name": c_name,  # for visualization
             "im_name": im_name,  # for visualization or ground truth
             "cloth": c,  # for input
             "cloth_mask": cm,  # for input
             "image": imgCropped,  # for visualization
-            "parse_cloth": pcm, #was im_c  # for ground truth
+            "parse_cloth": pcm,  # was im_c  # for ground truth
             "shape": shape,  # for visualization
         }
 

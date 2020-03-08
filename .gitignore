@@ -4,3 +4,4 @@ __pycache__
 data/test/
 data/train/
 *.swp
+.comet.config

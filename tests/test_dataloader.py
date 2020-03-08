@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 from addict import Dict
+import numpy as np
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -20,5 +21,6 @@ if __name__ == "__main__":
         print("cloth mask: ", i.cloth_mask.shape)
         print("image: ", i.image.shape)
         print("parse cloth: ", i.parse_cloth.shape)
+        print("**************************************")
 
         break

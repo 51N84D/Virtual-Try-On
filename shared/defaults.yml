@@ -5,9 +5,9 @@ output_path: ./outputs/
 # ----------------
 data:
   files: # if one is not none it will override the dirs location
-    base: /Users/phil/Desktop/VITON-Sonder/data
+    base: /Users/Sunsmeister/Desktop/VITON_data
     train: train_pairs.txt
-    val: test_pairs.txt
+    test: test_pairs.txt
 
   loaders:
     batch_size: 2
@@ -32,12 +32,12 @@ model:
 # ----- Comet options ----
 # ------------------------
 
-
 comet: 
-  workspace: ""
-  project_name: ""
+  workspace: "51n84d"
+  project_name: "sonderflow"
   exp: None
   log_image_freq: 1000
+  display_size: 5
 
 # ------------------------
 # ----- Train Params -----
@@ -57,5 +57,17 @@ train:
 # -----------------------------
 val:
   max_log_images: 1
-  save_im_freq: 1000
+  save_im_freq: 1
   store_images: false # write to disk on top of comet logging
+
+# -----------------------------
+# ----- Network Params -----
+# -----------------------------
+flow:
+  opt:
+    optimizer: ExtraAdam # one in [Adam, ExtraAdam] default: Adam
+    beta1: 0.9
+    lr: 0.0005
+    lr_policy: step # constant or step ; if step, specify step_size and gamma
+    lr_step_size: 30 # for linear decay : period of learning rate decay (epochs)
+    lr_gamma: 0.5 # Multiplicative factor of learning rate decay
