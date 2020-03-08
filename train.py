@@ -52,6 +52,7 @@ if __name__ == "__main__":
                 total_steps += opt.data.loaders.batch_size
                 epoch_iter += opt.data.loaders.batch_size
                 model.set_input(Dict(data))
+                model.optimize_parameters()
 
                 if total_steps % opt.val.save_im_freq == 0:
                     model.save_test_images(test_display_images, total_steps)

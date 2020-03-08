@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import itertools
 from utils import write_images
+from addict import Dict
 
 
 class SonderFlowEstimator(BaseModel):
@@ -29,7 +30,7 @@ class SonderFlowEstimator(BaseModel):
             self.model_names = []
 
         # load/define networks
-        self.netFlow = networks.FlowEstimator([2, 2, 2, 2])
+        self.netFlow = networks.FlowEstimator([2, 2, 2, 2]).to(self.device)
 
         self.comet_exp = opt.comet.exp
         self.store_image = opt.val.store_image
@@ -37,7 +38,7 @@ class SonderFlowEstimator(BaseModel):
 
         if self.isTrain:
             # define loss functions
-            self.perceptual_loss = networks.VGGPerceptualLoss()
+            self.perceptual_loss = networks.VGGPerceptualLoss().to(self.device)
 
             self.optimizer_flow = torch.optim.Adam(
                 itertools.chain(self.netFlow.parameters()),
@@ -64,7 +65,7 @@ class SonderFlowEstimator(BaseModel):
     def backward_flow(self):
 
         # Try reconstructing the input (identity mapping):
-        loss_func = torch.nn.L1Loss()
+        loss_func = torch.nn.L1Loss().to(self.device)
 
         self.loss = loss_func(self.warped_cloth, self.cloth)
 
@@ -89,19 +90,11 @@ class SonderFlowEstimator(BaseModel):
         self.backward_flow()
         self.optimizer_flow.step()
 
-        """
-        # D
-        self.set_requires_grad(self.netD, True)
-        self.optimizer_D.zero_grad()
-        self.backward_D()
-        self.optimizer_D.step()
-        """
-
     def save_test_images(self, test_display_data, curr_iter):
         save_images = []
         for i in range(len(test_display_data)):
 
-            self.set_input(test_display_data[i])
+            self.set_input(Dict(test_display_data[i]))
 
             self.test()
 
