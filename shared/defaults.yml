@@ -12,7 +12,7 @@ data:
   loaders:
     batch_size: 2
     shuffle: True
-    num_workers: 3
+    num_workers: 4
   transforms:
     height: 192
     width: 256
@@ -33,7 +33,7 @@ model:
 # ------------------------
 
 comet: 
-  workspace: "51n84d"
+  workspace: "philipjames11"
   project_name: "sonderflow"
   exp: None
   log_image_freq: 1000
@@ -57,7 +57,7 @@ train:
 # -----------------------------
 val:
   max_log_images: 1
-  save_im_freq: 1
+  save_im_freq: 1000
   store_images: false # write to disk on top of comet logging
 
 # -----------------------------
