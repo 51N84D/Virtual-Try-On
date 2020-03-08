@@ -29,6 +29,8 @@ class CPDataset(data.Dataset):
             self.datamode = "test"
             self.data_list = opt.data.files.test
 
+
+        print(self.data_list)
         self.fine_height = opt.data.transforms.height
         self.fine_width = opt.data.transforms.width
 
@@ -61,6 +63,7 @@ class CPDataset(data.Dataset):
 
         # cloth image & cloth mask
         c = Image.open(osp.join(self.data_path, "cloth", c_name))
+        #c.show()
         cm = Image.open(osp.join(self.data_path, "cloth-mask", c_name))
 
         c = self.transform(c)  # [-1,1]
@@ -102,7 +105,7 @@ class CPDataset(data.Dataset):
         blankImg = Image.new("RGB", (self.fine_height, self.fine_width), (255, 255, 255))
 
         imgCropped = Image.composite(source, blankImg, mask)
-        # imgCropped.show()
+        #imgCropped.show()
         imgCropped = self.transform(imgCropped)  # [-1,1]
 
         # shape downsample
