@@ -5,7 +5,7 @@ from addict import Dict
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from data.dataloader import *
-from tests.run import opts
+from run import opts
 
 
 if __name__ == "__main__":

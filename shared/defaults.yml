@@ -5,7 +5,7 @@ output_path: ./outputs/
 # ----------------
 data:
   files: # if one is not none it will override the dirs location
-    base: /Users/Sunsmeister/Desktop/VITON_data/
+    base: /Users/phil/Desktop/VITON-Sonder/data
     train: train_pairs.txt
     val: test_pairs.txt
 
