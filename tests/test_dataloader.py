@@ -8,14 +8,20 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from data.dataloader import *
 from run import opts
 
-from utils import set_mode
+from utils import *
 
 if __name__ == "__main__":
     print("Check the dataset for geometric matching module!")
-
-    opts = set_mode("test", opts)
-    dataset = CPDataset(opts)
-    data_loader = get_loader(opts)
+    
+    root = Path(os.path.dirname(Path(__file__).parent.resolve()))
+    print(root)
+    opt_file = "shared/defaults.yml"
+   
+    opt = load_opts(path=root / opt_file)
+    opt = set_mode("test", opt)
+    
+    dataset = CPDataset(opt)
+    data_loader = get_loader(opt)
 
     for i in data_loader:
         i = Dict(i)
