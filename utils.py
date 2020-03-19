@@ -83,7 +83,7 @@ def set_mode(mode, opts):
     return opts
 
 
-def write_images(image_outputs, curr_iter, im_per_row=5, comet_exp=None, store_im=False):
+def write_images(image_outputs, curr_iter, im_per_row=6, comet_exp=None, store_im=False):
     """Save output image
     Arguments:
         image_outputs {Tensor list} -- list of output images

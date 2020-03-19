@@ -47,6 +47,7 @@ if __name__ == "__main__":
         epoch_iter = 0
 
         for i, data in enumerate(loader):
+
             with Timer("Elapsed time in update " + str(i) + ": %f"):
 
                 total_steps += opt.data.loaders.batch_size
