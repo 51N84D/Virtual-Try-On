@@ -82,22 +82,22 @@ class CPDataset(data.Dataset):
         parse_array = np.array(im_parse)
 
         # -------Find segmentation class labels manually
-        # Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
-        # Image2 = Image.open(osp.join(self.data_path, "image", im_name))
+        #Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
+        #Image2 = Image.open(osp.join(self.data_path, "image", im_name))
 
-        # plt.imshow(Image1, cmap='jet')
-        # plt.imshow(parse_array, alpha=0.5)
-        # plt.imshow(Image2)
+        #plt.imshow(Image1)
+        #plt.imshow(parse_array, alpha=0.5)
+        #plt.imshow(Image2)
 
-        # plt.colorbar()
-        # plt.show()
-        # shirt = 5, pants = 9
-        # hair = 2, face = 13
+        #plt.colorbar()
+        #plt.show()
+        # shirt = 126, pants = 59
+        # hair = 76, face = 29
         # ------End
 
         parse_shape = (parse_array > 0).astype(np.float32)
 
-        parse_cloth = (parse_array == 5).astype(np.float32)
+        parse_cloth = (parse_array == 126).astype(np.float32)
 
         # get cropped top img
         source = Image.open(osp.join(self.data_path, "image", im_name))
@@ -106,6 +106,7 @@ class CPDataset(data.Dataset):
 
         imgCropped = Image.composite(source, blankImg, mask)
         #imgCropped.show()
+        #mask.show()
         imgCropped = self.transform(imgCropped)  # [-1,1]
 
         # shape downsample
@@ -116,11 +117,13 @@ class CPDataset(data.Dataset):
         parse_shape = parse_shape.resize((self.fine_width, self.fine_height), Image.BILINEAR)
         shape = self.transform(parse_shape)  # [-1,1]
         pcm = torch.from_numpy(parse_cloth)  # [0,1]
+        #plt.imshow(pcm)
+        #plt.show()
 
         # clean up
         im_c = im * pcm + (1 - pcm)  # [-1,1], fill 1 for other parts
 
-        pcm = pcm.unsqueeze_(0)
+        pcm = pcm.unsqueeze_(0) 
 
         result = {
             "c_name": c_name,  # for visualization

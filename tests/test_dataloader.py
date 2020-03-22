@@ -18,7 +18,7 @@ if __name__ == "__main__":
     opt_file = "shared/defaults.yml"
    
     opt = load_opts(path=root / opt_file)
-    opt = set_mode("test", opt)
+    opt = set_mode("train", opt)
     
     dataset = CPDataset(opt)
     data_loader = get_loader(opt)
