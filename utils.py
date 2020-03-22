@@ -97,3 +97,37 @@ def write_images(image_outputs, curr_iter, im_per_row=6, comet_exp=None, store_i
 
     if comet_exp is not None:
         comet_exp.log_image(image_grid, name="test_iter_" + str(curr_iter))
+
+
+def tv_loss(img, tv_weight):
+    """
+    Compute total variation loss.
+    Inputs:
+    - img: PyTorch Variable of shape (1, 3, H, W) holding an input image.
+    - tv_weight: Scalar giving the weight w_t to use for the TV loss.
+    Returns:
+    - loss: PyTorch Variable holding a scalar giving the total variation loss
+      for img weighted by tv_weight.
+    """
+    w_variance = torch.sum(torch.pow(img[:, :, :, :-1] - img[:, :, :, 1:], 2))
+    h_variance = torch.sum(torch.pow(img[:, :, :-1, :] - img[:, :, 1:, :], 2))
+    loss = tv_weight * (h_variance + w_variance)
+    return loss
+
+
+def prepare_sub_folder(output_directory):
+    """Create images and checkpoints subfolders in output directory
+    Arguments:
+        output_directory {str} -- output directory
+    Returns:
+        checkpoint_directory, image_directory-- checkpoints and images directories
+    """
+    image_directory = os.path.join(output_directory, "images")
+    if not os.path.exists(image_directory):
+        print("Creating directory: {}".format(image_directory))
+        os.makedirs(image_directory)
+    checkpoint_directory = os.path.join(output_directory, "checkpoints")
+    if not os.path.exists(checkpoint_directory):
+        print("Creating directory: {}".format(checkpoint_directory))
+        os.makedirs(checkpoint_directory)
+    return checkpoint_directory, image_directory

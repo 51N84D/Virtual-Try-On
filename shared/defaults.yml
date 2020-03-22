@@ -10,7 +10,7 @@ data:
     test: test_pairs.txt
 
   loaders:
-    batch_size: 3
+    batch_size: 1
     shuffle: True
     num_workers: 4
   transforms:
@@ -48,7 +48,7 @@ dis:
 # ------------------------
 
 model: 
-  is_train: true
+  is_train: false
   use_gpu: true
   lambdas: {}
   loss_name: 'lsgan'
@@ -70,12 +70,14 @@ comet:
 # ------------------------
 train:
   epochs: 100000000
+  save_freq: 20000
   lambdas: # scaling factors in the total loss
   log_level: 1 # 0: no log, 1: only aggregated losses, >1 detailed losses
   print_freq: 1 #How often to print iteration 
-  save_im_freq: 5000
-  resume_checkpoint: false
-  load_iter: 10000000000
+  save_im_freq: 1000
+  resume_checkpoint: true
+  load_iter: 120000
+  output_dir: '.'
 
 
 # -----------------------------

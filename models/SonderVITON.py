@@ -4,7 +4,7 @@ from .networks import init_weights
 import numpy as np
 import torch
 import itertools
-from utils import write_images
+from utils import write_images, tv_loss
 from addict import Dict
 
 
@@ -28,7 +28,7 @@ class SonderFlowEstimator(BaseModel):
             self.model_names = ["Flow"]
 
         else:  # during test time, only load Gs
-            self.model_names = []
+            self.model_names = ["Flow"]
 
         # load/define networks
         self.netFlow = networks.FlowEstimator().to(self.device)
@@ -74,7 +74,15 @@ class SonderFlowEstimator(BaseModel):
 
     def forward(self):
         # Input args: c_s, s_s, s_t
-        self.warped_cloth, self.warped_mask = self.netFlow(self.cloth, self.mask, self.parse_cloth)
+        (
+            self.f5,
+            self.f4,
+            self.f3,
+            self.f2,
+            self.f1,
+            self.warped_cloth,
+            self.warped_mask,
+        ) = self.netFlow(self.cloth, self.mask, self.parse_cloth)
 
     def backward_flow(self):
 
@@ -85,23 +93,27 @@ class SonderFlowEstimator(BaseModel):
         # )
 
         self.loss_G_struct = l1_loss(self.warped_mask, self.parse_cloth)
-        self.loss_G_struct2 = l1_loss(
+
+        self.loss_G_perc = self.criterionVGG(
             self.warped_cloth * self.warped_mask, self.image * self.parse_cloth
         )
 
-        # self.loss_G_perc = self.criterionVGG(self.warped_cloth, self.image)
+        tv_weight = 0.000001
 
-        self.loss_G = (
-            self.loss_G_struct + self.loss_G_struct2
-        )  # self.loss_G_GAN + self.loss_G_struct + self.loss_G_perc * 0.1
+        self.loss_TV = tv_loss(self.f5, tv_weight)
+        self.loss_TV += tv_loss(self.f4, tv_weight)
+        self.loss_TV += tv_loss(self.f3, tv_weight)
+        self.loss_TV += tv_loss(self.f2, tv_weight)
+        self.loss_TV += tv_loss(self.f1, tv_weight)
+
+        self.loss_G = self.loss_G_struct * 10.0 + self.loss_G_perc + self.loss_TV
         self.loss_G.backward()
 
         # Log G loss to comet:
         if self.comet_exp is not None:
-            # self.comet_exp.log_metric("loss G GAN", self.loss_G_GAN.cpu().detach())
             self.comet_exp.log_metric("loss G struct", self.loss_G_struct.cpu().detach())
-            self.comet_exp.log_metric("loss G struct 2", self.loss_G_struct2.cpu().detach())
-            # self.comet_exp.log_metric("loss G perceptual", self.loss_G_perc.cpu().detach())
+            self.comet_exp.log_metric("loss G perceptual", self.loss_G_perc.cpu().detach())
+            self.comet_exp.log_metric("loss G TV", self.loss_TV.cpu().detach())
 
         # Log G loss to comet:
         """
@@ -187,4 +199,3 @@ class SonderFlowEstimator(BaseModel):
             comet_exp=self.comet_exp,
             store_im=self.store_image,
         )
-

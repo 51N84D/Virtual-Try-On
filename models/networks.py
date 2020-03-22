@@ -124,20 +124,20 @@ class ResBlockDown(nn.Module):
 class ResBlockFPN(nn.Module):
     def __init__(self, num_blocks=5, input_nc=3):
         super(ResBlockFPN, self).__init__()
-        self.layer1 = ResBlockDown(input_nc, 8)
-        self.layer2 = ResBlockDown(8, 16)
-        self.layer3 = ResBlockDown(16, 32)
-        self.layer4 = ResBlockDown(32, 32)
-        self.layer5 = ResBlockDown(32, 32)
+        self.layer1 = ResBlockDown(input_nc, 64)
+        self.layer2 = ResBlockDown(64, 128)
+        self.layer3 = ResBlockDown(128, 256)
+        self.layer4 = ResBlockDown(256, 256)
+        self.layer5 = ResBlockDown(256, 256)
 
         self.upsample_dim1 = Conv2dBlock(
-            input_dim=8, output_dim=32, kernel_size=1, stride=1, padding=0
+            input_dim=64, output_dim=256, kernel_size=1, stride=1, padding=0
         )
         self.upsample_dim2 = Conv2dBlock(
-            input_dim=16, output_dim=32, kernel_size=1, stride=1, padding=0
+            input_dim=128, output_dim=256, kernel_size=1, stride=1, padding=0
         )
         self.upsample_dim3 = Conv2dBlock(
-            input_dim=32, output_dim=32, kernel_size=1, stride=1, padding=0
+            input_dim=256, output_dim=256, kernel_size=1, stride=1, padding=0
         )
 
     def _upsample_add(self, x, y):
@@ -175,7 +175,7 @@ class ResBlockFPN(nn.Module):
 
 
 class FlowEstimator(nn.Module):
-    def __init__(self, input_nc=32):  #! Should be FPN input_nc*4
+    def __init__(self, input_nc=256):  #! Should be FPN first channel * 4
         super(FlowEstimator, self).__init__()
         self.SourceFPN = ResBlockFPN(input_nc=4)
         self.TargetFPN = ResBlockFPN(input_nc=1)
@@ -214,7 +214,7 @@ class FlowEstimator(nn.Module):
         c_s_prime = self.warp(c_s, self.upsample(f1))
         s_s_prime = self.warp(s_s, self.upsample(f1))
 
-        return c_s_prime, s_s_prime
+        return f5, f4, f3, f2, f1, c_s_prime, s_s_prime
 
     # Define convolutional encoder
     def get_flow(self, input_nc):
@@ -289,39 +289,58 @@ import torchvision
 ######################### ######################################################
 
 
-class VGGPerceptualLoss(torch.nn.Module):
-    def __init__(self, resize=False):
-        super(VGGPerceptualLoss, self).__init__()
-        blocks = []
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[:4].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[4:9].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[9:16].eval())
-        blocks.append(torchvision.models.vgg16(pretrained=True).features[16:23].eval())
-        for bl in blocks:
-            for p in bl:
-                p.requires_grad = False
-        self.blocks = torch.nn.ModuleList(blocks)
-        self.transform = torch.nn.functional.interpolate
-        self.mean = torch.nn.Parameter(torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
-        self.std = torch.nn.Parameter(torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
-        self.resize = resize
+##################################################################################
+# VGG network definition
+##################################################################################
+from torchvision import models
 
-    def forward(self, input, target):
-        if input.shape[1] != 3:
-            input = input.repeat(1, 3, 1, 1)
-            target = target.repeat(1, 3, 1, 1)
-        input = (input - self.mean) / self.std
-        target = (target - self.mean) / self.std
-        if self.resize:
-            input = self.transform(input, mode="bilinear", size=(224, 224), align_corners=False)
-            target = self.transform(target, mode="bilinear", size=(224, 224), align_corners=False)
-        loss = 0.0
-        x = input
-        y = target
-        for block in self.blocks:
-            x = block(x)
-            y = block(y)
-            loss += torch.nn.functional.l1_loss(x, y)
+# Source: https://github.com/NVIDIA/pix2pixHD
+class Vgg19(torch.nn.Module):
+    def __init__(self, requires_grad=False):
+        super(Vgg19, self).__init__()
+        vgg_pretrained_features = models.vgg19(pretrained=True).features
+        self.slice1 = torch.nn.Sequential()
+        self.slice2 = torch.nn.Sequential()
+        self.slice3 = torch.nn.Sequential()
+        self.slice4 = torch.nn.Sequential()
+        self.slice5 = torch.nn.Sequential()
+        for x in range(2):
+            self.slice1.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(2, 7):
+            self.slice2.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(7, 12):
+            self.slice3.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(12, 21):
+            self.slice4.add_module(str(x), vgg_pretrained_features[x])
+        for x in range(21, 30):
+            self.slice5.add_module(str(x), vgg_pretrained_features[x])
+        if not requires_grad:
+            for param in self.parameters():
+                param.requires_grad = False
+
+    def forward(self, X):
+        h_relu1 = self.slice1(X)
+        h_relu2 = self.slice2(h_relu1)
+        h_relu3 = self.slice3(h_relu2)
+        h_relu4 = self.slice4(h_relu3)
+        h_relu5 = self.slice5(h_relu4)
+        out = [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
+        return out
+
+
+# Source: https://github.com/NVIDIA/pix2pixHD
+class VGGPerceptualLoss(nn.Module):
+    def __init__(self):
+        super(VGGPerceptualLoss, self).__init__()
+        self.vgg = Vgg19().cuda().eval()
+        self.criterion = nn.L1Loss()
+        self.weights = [1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0]
+
+    def forward(self, x, y):
+        x_vgg, y_vgg = self.vgg(x), self.vgg(y)
+        loss = 0
+        for i in range(len(x_vgg)):
+            loss += self.weights[i] * self.criterion(x_vgg[i], y_vgg[i].detach())
         return loss
 
 
