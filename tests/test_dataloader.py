@@ -31,6 +31,9 @@ if __name__ == "__main__":
         print("parse cloth: ", i.parse_cloth.shape)
         print("c name: ", i.c_name)
         print("im name: ", i.im_name)
+        print("pose: ", i.pose.shape)
+        print("pose_image: ", i.pose_image.shape)
+
         print("**************************************")
 
         break

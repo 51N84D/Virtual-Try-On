@@ -14,8 +14,9 @@ data:
     shuffle: True
     num_workers: 4
   transforms:
-    height: 192
-    width: 256
+    height: 256
+    width: 192
+    radius: 5
 
 # ---------------------
 # ----- Generator -----

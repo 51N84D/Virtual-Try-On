@@ -12,7 +12,7 @@ import argparse
 import matplotlib.pyplot as plt
 import sys
 import cv2
-
+import json
 
 class CPDataset(data.Dataset):
     def __init__(self, opt):
@@ -33,6 +33,7 @@ class CPDataset(data.Dataset):
         print(self.data_list)
         self.fine_height = opt.data.transforms.height
         self.fine_width = opt.data.transforms.width
+        self.radius = opt.data.transforms.radius
 
         self.data_path = osp.join(self.dataroot, self.datamode)
 
@@ -83,7 +84,7 @@ class CPDataset(data.Dataset):
 
         # -------Find segmentation class labels manually
         #Image1 = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
-        #Image2 = Image.open(osp.join(self.data_path, "image", im_name))
+        Image2 = Image.open(osp.join(self.data_path, "image", im_name))
 
         #plt.imshow(Image1)
         #plt.imshow(parse_array, alpha=0.5)
@@ -125,9 +126,50 @@ class CPDataset(data.Dataset):
 
         pcm = pcm.unsqueeze_(0) 
 
+        #-----pose
+        pose_name = im_name.replace('.jpg', '_keypoints.json')
+        with open(osp.join(self.data_path, 'pose', pose_name), 'r') as f:
+            pose_label = json.load(f)
+            pose_data = pose_label['people'][0]['pose_keypoints']
+            pose_data = np.array(pose_data)
+            pose_data = pose_data.reshape((-1,3))
+
+        point_num = pose_data.shape[0]
+        pose_map = torch.zeros(point_num, self.fine_height, self.fine_width)
+        r = self.radius
+        im_pose = Image.new('L', (self.fine_width, self.fine_height))
+        pose_draw = ImageDraw.Draw(im_pose)
+        for i in range(point_num):
+            one_map = Image.new('L', (self.fine_width, self.fine_height))
+            draw = ImageDraw.Draw(one_map)
+            pointx = pose_data[i,0]
+            pointy = pose_data[i,1]
+            if pointx > 1 and pointy > 1:
+                draw.ellipse((pointx-r, pointy-r, pointx+r, pointy+r), 'white', 'white')
+                pose_draw.ellipse((pointx-r, pointy-r, pointx+r, pointy+r), 'white', 'white')
+            #plt.imshow(one_map, cmap='jet', alpha=.9)
+            #plt.show()
+            one_map = self.transform(one_map) #[-1,1]
+            pose_map[i] = one_map[0]
+
+        #plt.imshow(im_pose, cmap='jet', alpha=0.5)
+        #plt.show()
+
+        #for i in range(18):
+        #    show_ = np.squeeze(pose_map[i])
+        #    plt.imshow(Image2)
+        #    plt.imshow(show_, cmap="jet", alpha=.5)
+        #    plt.show()
+
+        #just for visualization
+        im_pose = self.transform(im_pose)
+
+
         result = {
             "c_name": c_name,  # for visualization
             "im_name": im_name,  # for visualization or ground truth
+            "pose_image": im_pose, #visualize pose, can overlay with image for better visualization
+            "pose": pose_map, #for input
             "cloth": c,  # for input
             "cloth_mask": cm,  # for input
             "image": imgCropped,  # for visualization
