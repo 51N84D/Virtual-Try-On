@@ -5,7 +5,7 @@ output_path: ./outputs/
 # ----------------
 data:
   files: # if one is not none it will override the dirs location
-    base: /Users/phil/Desktop/VITON-Sonder/data
+    base: /home/phil/Desktop/VITON-Sonder/data
     train: train_pairs.txt
     test: test_pairs.txt
 
@@ -14,8 +14,9 @@ data:
     shuffle: True
     num_workers: 4
   transforms:
-    height: 192
-    width: 256
+    height: 256
+    width: 192
+    radius: 5
 
 # ------------------------
 # ----- Model options -----
