@@ -5,7 +5,7 @@ output_path: ./outputs/
 # ----------------
 data:
   files: # if one is not none it will override the dirs location
-    base: /home/phil/Desktop/VITON-Sonder/data
+    base: /home/phil/Desktop/VITON-Sonder/data #/Users/Sunsmeister/Desktop/VITON_data
     train: train_pairs.txt
     test: test_pairs.txt
 
@@ -18,15 +18,41 @@ data:
     width: 192
     radius: 5
 
+# ---------------------
+# ----- Generator -----
+# ---------------------
+
+dis:
+  soft_shift: 0.2 # label smoothing: real in U(1-soft_shift, 1), fake in U(0, soft_shift) # ! one-sided label smoothing
+  flip_prob: 0.05 # label flipping
+  opt:
+    optimizer: Adam # one in [Adam, ExtraAdam] default: Adam
+    beta1: 0.5
+    lr: 0.00005
+    lr_policy: step # constant or step ; if step, specify step_size and gamma
+    lr_step_size: 30 # for linear decay
+    lr_gamma: 0.5
+  params:
+    input_nc: 7
+    ndf: 64
+    n_layers: 3
+    norm: "batch"
+    init_type: kaiming
+    init_gain: 0.2
+    use_sigmoid: false
+    kw: 4
+    padw: 1
+    nf_mult: 1
+    nf_mult_prev: 1
 # ------------------------
 # ----- Model options -----
 # ------------------------
 
 model: 
-  is_train: true
+  is_train: false
   use_gpu: true
   lambdas: {}
-  loss_names: []
+  loss_name: 'lsgan'
   verbose: false
 
 # ------------------------
@@ -44,13 +70,15 @@ comet:
 # ----- Train Params -----
 # ------------------------
 train:
-  epochs: 1000
+  epochs: 100000000
+  save_freq: 20000
   lambdas: # scaling factors in the total loss
   log_level: 1 # 0: no log, 1: only aggregated losses, >1 detailed losses
   print_freq: 1 #How often to print iteration 
-  save_im_freq: 100
-  resume_checkpoint: false
-  load_iter: 10000000000
+  save_im_freq: 1000
+  resume_checkpoint: true
+  load_iter: 120000
+  output_dir: '.'
 
 
 # -----------------------------
@@ -58,7 +86,7 @@ train:
 # -----------------------------
 val:
   max_log_images: 1
-  save_im_freq: 1000
+  save_im_freq: 500
   store_images: false # write to disk on top of comet logging
 
 # -----------------------------
@@ -66,9 +94,9 @@ val:
 # -----------------------------
 flow:
   opt:
-    optimizer: ExtraAdam # one in [Adam, ExtraAdam] default: Adam
+    optimizer: Adam # one in [Adam, ExtraAdam] default: Adam
     beta1: 0.9
-    lr: 0.0005
+    lr: 0.00002
     lr_policy: step # constant or step ; if step, specify step_size and gamma
     lr_step_size: 30 # for linear decay : period of learning rate decay (epochs)
     lr_gamma: 0.5 # Multiplicative factor of learning rate decay

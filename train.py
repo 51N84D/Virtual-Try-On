@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     opt.comet.exp = comet_exp
 
-    opt = set_mode("test", opt)
+    opt = set_mode("train", opt)
     val_loader = get_loader(opt)
     test_display_images = [iter(val_loader).next() for i in range(opt.comet.display_size)]
 
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         epoch_iter = 0
 
         for i, data in enumerate(loader):
+
             with Timer("Elapsed time in update " + str(i) + ": %f"):
 
                 total_steps += opt.data.loaders.batch_size
